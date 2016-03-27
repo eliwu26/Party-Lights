@@ -1,19 +1,20 @@
 #include <EEPROM.h>
 
-#define PARTYMODE 0
-#define SLOW 1
-#define SINGLE 2
-#define SINGLE_WHITE 3
-#define BASSFADE 4
-#define AMBIENT_GREEN 5
-#define NIGHT_VISION 6
-#define WHITE 7
-#define OFF 8
-#define MODE_MAX 8
+#define MODE_OFF 0
+#define MODE_PARTY 1
+#define MODE_SLOW 2
+#define MODE_GREENPULSE 3
+#define MODE_MODE_WHITEPULSE 4
+#define MODE_BASSFADE 5
+#define MODE_GREEN 6
+#define MODE_RED 7
+#define MODE_WHITE 8
+
+#define NUM_MODES 9
 
 bool isChanging = false;
 volatile unsigned long timer_start;
-int mode = PARTYMODE;
+int mode = MODE_PARTY;
 int strobe = 4; // strobe pins on digital 4
 int res = 5; // reset pins on digital 5
 int ledPin = 9;
@@ -66,10 +67,7 @@ void changeMode() {
     if (digitalRead(2) == 1) return;
     Serial.print("");
   }
-  mode++;
-  if (mode > MODE_MAX) {
-    mode = 0;
-  }
+  mode = (mode + 1) % NUM_MODES;
   EEPROM.write(0, mode);
   rawWriteColor(0, 0, 0, 0);
   timer_start = micros();
@@ -192,7 +190,7 @@ void loop() {
   
   double intensity = map(avgleft, 0, 700, 0, 100);
   
-  if (mode == PARTYMODE || mode == SLOW) {
+  if (mode == MODE_PARTY || mode == MODE_SLOW) {
     while (abs(led1Value-out) > 1.0 || abs(led2Value-out2) > 1.0 || abs(led3Value-out3) > 1.0 || abs(led4Value-out4) > 1.0) {
       globalRed = 0;
       globalBlue = 0;
@@ -208,18 +206,18 @@ void loop() {
       analogWrite(ledPin3,led3Value);
       led4Value += sign(out4-led4Value);
       int delayMS = 200;
-      if(mode == SLOW) delayMS = 1000;
+      if(mode == MODE_SLOW) delayMS = 1000;
       delayMicroseconds(delayMS * pow(timeMultiplier,1));
     }
   //  writeColor(102,255,0,60);
-  } else if(mode == AMBIENT_GREEN){
+  } else if (mode == MODE_GREEN){
     rawWriteColor(102,255,0,60);
-  } else if(mode == NIGHT_VISION){
+  } else if (mode == MODE_RED){
     rawWriteColor(255,0,0,100);
-  } else if(mode == WHITE){
+  } else if (mode == MODE_WHITE){
     rawWriteColor(255,255,255,100);
-  } else if(mode == SINGLE){  
-    while(abs(allLedValue-intensity)>1.0) {
+  } else if (mode == MODE_GREENPULSE){  
+    while (abs(allLedValue-intensity) > 1.0) {
       allLedValue += 0.4*sign(intensity-allLedValue);
       // writeColor(0,0,255,led1Value);
       rawWriteColor(102,255,0,allLedValue);
@@ -227,10 +225,10 @@ void loop() {
       int delayMS = 3000 / pow((abs(lastUpdate-intensity) + 1), 1);
       //  Serial.println(delayMS);
       
-      delayMicroseconds(1000*pow(timeMultiplier,1));
+      delayMicroseconds(1000 * pow(timeMultiplier, 1));
     }
     lastUpdate = intensity;
-  } else if (mode == SINGLE_WHITE) {  
+  } else if (mode == MODE_MODE_WHITEPULSE) {  
     while (abs(allLedValue-intensity) > 1.0) {
       allLedValue += 0.4 * sign(intensity-allLedValue);
       // writeColor(0,0,255,led1Value);
@@ -242,7 +240,7 @@ void loop() {
       delayMicroseconds(1000*pow(timeMultiplier,1));
     }
     lastUpdate = intensity;
-  } else if (mode == BASSFADE) {
+  } else if (mode == MODE_BASSFADE) {
     if (out < 15) out = 0;
     while (abs(allLedValue-out) > 1.0) {
       allLedValue += 2*sign(out-allLedValue);
@@ -257,8 +255,8 @@ void loop() {
     }
     Serial.println(out);
     lastUpdate = out;
-  } else if(mode == OFF){
-    rawWriteColor(0,0,0,0);
+  } else if (mode == MODE_OFF){
+    rawWriteColor(0, 0, 0, 0);
   }
   // Serial.println("RNNING");
 }

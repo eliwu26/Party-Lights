@@ -1,20 +1,10 @@
 #include <EEPROM.h>
 
-#define MODE_OFF 0
-#define MODE_PARTY 1
-#define MODE_SLOW 2
-#define MODE_GREENPULSE 3
-#define MODE_MODE_WHITEPULSE 4
-#define MODE_BASSFADE 5
-#define MODE_GREEN 6
-#define MODE_RED 7
-#define MODE_WHITE 8
-
-#define NUM_MODES 9
+#include "config_charles.h" // or make your own config file with modes
 
 bool isChanging = false;
 volatile unsigned long timer_start;
-int mode = MODE_PARTY;
+int mode = MODE_OFF;
 int strobe = 4; // strobe pins on digital 4
 int res = 5; // reset pins on digital 5
 int ledPin = 9;
